@@ -40,8 +40,8 @@ echo "$interface_name をモニターモードに設定しました。"
 
 # キャプチャ開始
 echo "キャプチャを開始します..."
-nohup unbuffer sudo tshark -i $interface_name -Y "wlan.fc.type_subtype == 4" -T fields -e frame.time_epoch -e wlan.sa -e radiotap.dbm_antsignal >> /home/fukuda/output.txt &
+nohup unbuffer sudo tshark -i $interface_name -Y "wlan.fc.type_subtype == 4" -T fields -e frame.time_epoch -e wlan.sa -e radiotap.dbm_antsignal >> output.txt &
 echo "キャプチャが開始されました。データはoutput.txtに保存されます。"
 
 # 起動時にpython /home/fukuda/file_send.pyを実行
-python /home/fukuda/file_send.py &
+python file_send.py &
