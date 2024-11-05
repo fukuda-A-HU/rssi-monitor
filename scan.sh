@@ -26,13 +26,18 @@ for pid in $(ps aux | grep '[t]shark' | awk '{print $2}'); do
   kill "$pid" 2>/dev/null || true
 done
 
+# hcitoolプロセスを取得し、killする
+for pid in $(ps aux | grep '[h]citool' | awk '{print $2}'); do
+  kill "$pid" 2>/dev/null || true
+done
+
 # output.txtを削除
 rm -f output.txt
 touch output.txt
 
 # TP-Linkインターフェースをモニターモードに設定
 # wifiの接続を切断
-# sudo nmcli device disconnect $interface_name
+sudo nmcli device disconnect $interface_name
 sudo ip link set $interface_name down
 sudo iw dev $interface_name set type monitor
 sudo ip link set $interface_name up
@@ -40,7 +45,18 @@ echo "$interface_name をモニターモードに設定しました。"
 
 # キャプチャ開始
 echo "キャプチャを開始します..."
-nohup unbuffer sudo tshark -i $interface_name -Y "wlan.fc.type_subtype == 4" -T fields -e frame.time_epoch -e wlan.sa -e radiotap.dbm_antsignal >> output.txt &
+# WiFiのキャプチャ（末尾にWIFIを付けてwifi_output.txtに保存）
+nohup unbuffer sudo -k tshark -i $interface_name -Y "wlan.fc.type_subtype == 4" -T fields -e frame.time_epoch -e wlan.sa -e radiotap.dbm_antsignal | awk '{print $1 "\t" $2 "\t" $3 "\tWIFI"}' >> output.txt 2>&1 &
+
+# BLEのキャプチャ（末尾にBLEを付けてble_output.txtに保存）
+nohup unbuffer sudo tshark -i bluetooth0 -V | awk '
+    /Epoch Time:/ {timestamp = $3}
+    /BD_ADDR:/ {address = $2}
+    /RSSI:/ {rssi = $2; print timestamp "\t" address "\t" rssi "\tBLE"; timestamp=""; address=""; rssi=""}
+' >> output.txt 2>&1 &
+# sudo tshark -i $interface_name -Y "wlan.fc.type_subtype == 4" -T fields -e frame.time_epoch -e wlan.sa -e radiotap.dbm_antsignal >> output.txt
+
+
 echo "キャプチャが開始されました。データはoutput.txtに保存されます。"
 
 # 起動時にpython /home/fukuda/file_send.pyを実行
