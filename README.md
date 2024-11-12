@@ -13,6 +13,9 @@ monitorモードになっているwifiモジュールが必要．
 
 本実験ではTP-Link T3U Plusを用いている．
 
+下記ドライバーをインストール
+https://github.com/morrownr/88x2bu-20210702
+
 ## 接続されているwifiインターフェイスを見分ける
 ip link showで現在認識しているwifiインターフェイスの一覧が表示できる
 
