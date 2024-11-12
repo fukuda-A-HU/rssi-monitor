@@ -32,12 +32,26 @@ for pid in $(ps aux | grep '[h]citool' | awk '{print $2}'); do
 done
 
 # output.txtを削除
-rm -f output.txt
-touch output.txt
+rm -f wifi_output.txt
+touch wifi_output.txt
+rm -f ble_output.txt
+touch ble_output.txt
+
+
+# wifiの接続を切断
+status=$(nmcli device status | grep "$interface_name" | awk '{print $3}')
+# 状態に応じて処理を分岐
+if [ "$status" = "connected" ]; then
+    echo "$interface_name is active. Disconnecting..."
+    sudo nmcli device disconnect "$interface_name"
+    echo "$interface_name has been disconnected."
+elif [ "$status" = "disconnected" ]; then
+    echo "$interface_name is already disconnected. Skipping disconnect."
+else
+    echo "$interface_name is in an unknown state: $status"
+fi
 
 # TP-Linkインターフェースをモニターモードに設定
-# wifiの接続を切断
-sudo nmcli device disconnect $interface_name
 sudo ip link set $interface_name down
 sudo iw dev $interface_name set type monitor
 sudo ip link set $interface_name up
@@ -45,19 +59,14 @@ echo "$interface_name をモニターモードに設定しました。"
 
 # キャプチャ開始
 echo "キャプチャを開始します..."
+
 # WiFiのキャプチャ（末尾にWIFIを付けてwifi_output.txtに保存）
-nohup unbuffer sudo -k tshark -i $interface_name -Y "wlan.fc.type_subtype == 4" -T fields -e frame.time_epoch -e wlan.sa -e radiotap.dbm_antsignal | awk '{print $1 "\t" $2 "\t" $3 "\tWIFI"}' >> output.txt 2>&1 &
-
+nohup unbuffer sudo tshark -i wlan1 -Y "wlan.fc.type_subtype == 4" -T fields -e frame.time_epoch -e wlan.sa -e radiotap.dbm_antsignal >> wifi_output.txt &
 # BLEのキャプチャ（末尾にBLEを付けてble_output.txtに保存）
-nohup unbuffer sudo tshark -i bluetooth0 -V | awk '
-    /Epoch Time:/ {timestamp = $3}
-    /BD_ADDR:/ {address = $2}
-    /RSSI:/ {rssi = $2; print timestamp "\t" address "\t" rssi "\tBLE"; timestamp=""; address=""; rssi=""}
-' >> output.txt 2>&1 &
-# sudo tshark -i $interface_name -Y "wlan.fc.type_subtype == 4" -T fields -e frame.time_epoch -e wlan.sa -e radiotap.dbm_antsignal >> output.txt
+# nohup unbuffer sudo tshark -i bluetooth0 -V | awk '/Epoch Time:/ {timestamp = $3} /BD_ADDR:/ {address = $2} /RSSI:/ {rssi = $2; print timestamp "\t" address "\t" rssi "\tBLE"; timestamp=""; address=""; rssi=""}' >> ble_output.txt 2>&1 &
 
 
-echo "キャプチャが開始されました。データはoutput.txtに保存されます。"
+echo "キャプチャが開始されました。データはble_output.txt、wifi_output.txtに保存されます。"
 
 # 起動時にpython /home/fukuda/file_send.pyを実行
 python file_send.py &

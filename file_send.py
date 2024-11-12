@@ -57,12 +57,20 @@ def main():
         if is_connected():
             send_email_with_attachment(
                 to_address="fukuda.eiki.l8@elms.hokudai.ac.jp",  # 送信先のメールアドレス
-                subject="実験データ送信",
+                subject="WIFI実験データ送信",
                 body="実験データを送信します。",
-                attachment_path="/home/fukuda/output.txt"  # 添付ファイルのパス
+                attachment_path="wifi_output.txt"  # 添付ファイルのパス
             )
-                    # 1分待機
-            time.sleep(180)
+            time.sleep(120)
+
+            # send_email_with_attachment(
+            #    to_address="fukuda.eiki.l8@elms.hokudai.ac.jp",  # 送信先のメールアドレス
+            #    subject="BLE実験データ送信",
+            ##    body="実験データを送信します。",
+            #    attachment_path="ble_output.txt"  # 添付ファイルのパス
+            #)
+            time.sleep(120)
+
         else:
             # print("インターネットに接続されていません。")
 
